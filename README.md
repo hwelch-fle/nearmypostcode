@@ -6,6 +6,10 @@ Explainer Blog post: http://computingthedetails.org/blog/a-privacy-preserving-po
 
 Explainer video: https://youtu.be/5HRAUWrvK6o
 
+# Issues
+
+I'm no longer accepting issues via github, please raise issues on codeberg instead: https://codeberg.org/lexbailey/nearmypostcode/issues
+
 # Principles
 
 NearMyPostcode (NMP) lets you provide a "store locator" feature (or similar) on your website that respects your user's privacy.
