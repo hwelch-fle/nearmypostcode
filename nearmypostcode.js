@@ -29,7 +29,7 @@ async function NearMyPostcode(datafile_url, quiet=false){
         throw new Error("Postcode data file is not using a known format");
     }
     const version = new Uint32Array(deltapack.slice(4,8))[0];
-    const max_version = 2; // This version of the library only supports version 1
+    const max_version = 2; // This is the latest version of the file format that this version of the library can read
     if (version > max_version){
         throw new Error(`Postcode data file uses format version ${version}. This NMP version only supports data formats up to ${max_version}. NMP needs to be updated.`);
     }
