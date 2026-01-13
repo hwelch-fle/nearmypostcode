@@ -14,6 +14,7 @@ Point = tuple[float, float]
 Kilometers = float
 Headers = tuple[int, int, int, int]
 
+# Byte converters
 def uint32(b: bytes) -> Generator[int]:
     # unsigned int
     yield from (i[0] for i in struct.iter_unpack('I', b))
@@ -40,7 +41,9 @@ def float64(b: bytes) -> Generator[float]:
 
 class NearMyPostcode:
     __max_version__ = 2
-    __magic__ = b'UKPP'
+    __magic__ = b'UKPP' # Use byte string for readability
+    
+    # Error mesages
     __e_format__ = "Postcode format not recognised"
     __e_notfound__ = "Postcode not found"
     __e_data_version__ = "Data file format does not support this type of postcode"
@@ -58,6 +61,8 @@ class NearMyPostcode:
         # Get the extents of the postcode bounding box
         # Moved from `lookup_postcode` method to initialization
         self.minlong, self.maxlong, self.minlat, self.maxlat = float64(self.deltapack[0:32])
+        # Discard extents from pack
+        self.deltapack = self.deltapack[32:]
         
     def _load_datafile(self, datafile: str | Path) -> bytes:
         try:
@@ -149,30 +154,34 @@ class NearMyPostcode:
     # indexing into the postcode tables
     def lookup_postcode(self, postcode: str) -> tuple[str, Point]:
         # Calculate the encoded value of this postcode
-        postcode = self.format_postcode(postcode)
-        lookup_outward_only = len(postcode) == 4
+        cpostcode = self.format_postcode(postcode)
+        lookup_outward_only = len(cpostcode) == 4
         if lookup_outward_only and self.version < 2:
             raise ValueError(self.__e_data_version__)
-        c_code = self.pack_code(postcode) 
+        c_code = self.pack_code(cpostcode) 
         c = [ # type: ignore (Not Used?)
             c_code & 0xff,
             (c_code >> 8) & 0xff,
             (c_code >> 16) & 0xff,
         ]
         
+        # Extent getting moved to __init__
+        # NOTE: This removes the extent data from the offset
+        
         # Use the two character prefix to find the offsets in the offset lookup table
-        c1 = ord(postcode[0])
-        c2 = ord(postcode[1])
-        c2_i = c2 - ord('0') if c2 < ord('A') else 10 + c2 - ord('A')
+        c1 = ord(cpostcode[0])
+        c2 = ord(cpostcode[1])
+        c2_i = (c2 - ord('0')) if c2 < ord('A') else (10 + c2 - ord('A'))
         lut_index = ((c1 - ord('A'))*36)+c2_i
-        lpos = (8*4) + (lut_index * 4)
+        print(lut_index)
+        lpos = (lut_index * 4)
         startpos, endpos = uint32(self.deltapack[lpos:lpos+8])
         
         # Scan the rest of the file from startpos to endpos looking for the postcode
         # (startpos is relative to the start of the postcode data, so calculate that offset first)
         
-        # Skip extent(32), LUT(3744), and offset(4)
-        datastart = (8*4) + (4*26*36) + 4
+        # LUT(3744), and offset(4)
+        datastart = (4*26*36) + 4
         pos = startpos + datastart
         last_code = 0
         last_lat = 0
@@ -218,7 +227,7 @@ class NearMyPostcode:
                     # Calculate the real coordinates (the stored value is the fraction of the width or height of the bounding box)
                     lat2  = self.minlat +  (self.maxlat -self.minlat )*(lat/65535.0)
                     long2 = self.minlong + (self.maxlong-self.minlong)*(long/65535.0)
-                    return (postcode, (long2,lat2))
+                    return (cpostcode, (long2,lat2))
             last_code = this_code
             last_lat = lat
             last_long = long
