@@ -81,7 +81,7 @@ describe('NearMyPostcode()', () => {
     });
 
     it('should be able to load files created for version 1 of the algorithm', async () => {
-        const v1data = await fs.openAsBlob('testdata/version=1/A0AA0AA=>(0,0).pack');
+        const v1data = await fs.openAsBlob('testdata/version=1/A0AA0AA=(0,0).pack');
         const v1databuf = await v1data.arrayBuffer();
         const nmp = await NearMyPostcode(v1databuf);
         assert.deepEqual('A0AA0AA', nmp.format_postcode('a0aa0aa'));
@@ -98,7 +98,7 @@ describe('NearMyPostcode()', () => {
     });
 
     it('should refuse to load files that are too new', async () => {
-        const v99data = await fs.openAsBlob('testdata/version=999999/A0AA0AA=>(0,0).pack');
+        const v99data = await fs.openAsBlob('testdata/version=999999/A0AA0AA=(0,0).pack');
         const v99databuf = await v99data.arrayBuffer();
         assert.rejects(async () => NearMyPostcode(v99databuf));
     });
@@ -106,7 +106,7 @@ describe('NearMyPostcode()', () => {
     it('can load from a URL', async () => {
         assert.rejects(async () => NearMyPostcode('http://localhost:9876/invalid_url'));
         assert.rejects(async () => NearMyPostcode('invalid_url_for_different_reasons'));
-        const v1data = await fs.openAsBlob('testdata/version=1/A0AA0AA=>(0,0).pack');
+        const v1data = await fs.openAsBlob('testdata/version=1/A0AA0AA=(0,0).pack');
         const v1databuf = await v1data.arrayBuffer();
         const v1bytes= await v1data.bytes();
 
